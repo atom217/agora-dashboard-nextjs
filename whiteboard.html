@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Agora Whiteboard</title>
+    <script src="https://unpkg.com/agora-rtc-sdk"></script>
+    <script>
+      var client, localStream, canvas, ctx;
+
+      function initAgora() {
+        client = AgoraRTC.createClient({
+          mode: "live",
+          codec: "vp8"
+        });
+
+        client.init("YOUR_APP_ID", function () {
+          console.log("AgoraRTC client initialized");
+          joinChannel();
+        }, function (err) {
+          console.log("[ERROR] : AgoraRTC client init failed", err);
+        });
+      }
+
+      function joinChannel() {
+        var channelName = "whiteboard";
+        client.join(null, channelName, null, function (uid) {
+          console.log("User " + uid + " join channel successfully");
+          localStream = AgoraRTC.createStream({
+            streamID: uid,
+            audio: false,
+            video: false,
+            screen: false
+          });
+          localStream.init(function () {
+            console.log("getUserMedia successfully");
+            localStream.play("canvas");
+            createCanvas();
+          }, function (err) {
+            console.log("getUserMedia failed", err);
+          });
+        }, function(err){
+          console.log("[ERROR] : join channel failed", err);
+        });
+      }
+
+      function createCanvas() {
+        canvas = document.createElement("canvas");
+        canvas.id = "whiteboard";
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.querySelector("body").appendChild(canvas);
+        ctx = canvas.getContext("2d");
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "black";
+        canvas.onmousedown = function (e) {
+          ctx.beginPath();
+          ctx.moveTo(e.clientX, e.clientY);
+          canvas.onmousemove = function (e) {
+            ctx.lineTo(e.clientX, e.clientY);
+            ctx.stroke();
+          };
+          canvas.onmouseup = function () {
+            canvas.onmousemove = null;
+          };
+        };
+      }
+
+      window.onload = function () {
+        initAgora();
+      }
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
